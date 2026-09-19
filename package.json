@@ -1,0 +1,29 @@
+{
+  "name": "ehr-integration-management-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tracks and generates API access requests to ONC-certified EHR vendors under 45 CFR 170.404.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc && npm run copy-assets",
+    "start": "node dist/server.js",
+    "dev": "node --experimental-strip-types --watch src/server.ts",
+    "migrate": "node --experimental-strip-types src/db/migrate.ts",
+    "sync": "node --experimental-strip-types src/jobs/syncRegistry.ts",
+    "clocks": "node --experimental-strip-types src/jobs/checkClocks.ts",
+    "test": "node --experimental-strip-types src/lib/__tests__/businessDays.test.ts && node --experimental-strip-types src/lib/__tests__/extract.test.ts && node --experimental-strip-types src/jobs/__tests__/syncRegistry.test.ts",
+    "copy-assets": "mkdir -p dist/db dist/profile && cp src/db/*.sql src/db/*.json dist/db/ && cp src/profile/*.json dist/profile/"
+  },
+  "dependencies": {
+    "fastify": "^5.2.0",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.7.2"
+  }
+}

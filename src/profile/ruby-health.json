@@ -1,0 +1,118 @@
+{
+  "$comment": [
+    "Ruby's canonical facts, answered once and reused in every vendor packet.",
+    "Fields marked \"needsConfirmation\": true were drafted rather than supplied and",
+    "must be confirmed before any packet built from them is sent. The packet",
+    "generator surfaces them as open items rather than silently asserting them."
+  ],
+
+  "entity": {
+    "legalName": "Ruby Health LLC",
+    "type": "Limited Liability Company",
+    "jurisdiction": null,
+    "needsConfirmation": true,
+    "confirmationNote": "State of formation and EIN not yet supplied; several vendor intake forms ask for both."
+  },
+
+  "contacts": {
+    "technical": { "name": "Kaycee Cones", "email": "kaycee@ruby-health.com" },
+    "business": { "name": "Kaycee Cones", "email": "kaycee@ruby-health.com" },
+    "security": { "name": "Kaycee Cones", "email": "kaycee@ruby-health.com" }
+  },
+
+  "web": {
+    "website": "https://ruby-health.com",
+    "privacyPolicy": "https://docs.google.com/document/d/1-8WrXLWk99mk4ldqNHcV1xJT5ZWFqn6KjloNsIbYJMA/edit?usp=sharing",
+    "termsOfService": null,
+    "needsConfirmation": true,
+    "confirmationNote": "Website URL inferred from the contact email domain and not verified. The privacy policy is a public Google Doc; host it on the company domain before submitting -- a docs.google.com link in a formal vendor submission reads as unfinished, and larger vendors' partner reviews notice."
+  },
+
+  "application": {
+    "name": "Ruby",
+    "summary": "Ruby prepares insurance claims for independent practices. It reads the clinical documentation a provider has already written for an encounter and assembles a complete, correctly coded claim for that payer, which the provider reviews and signs off on before submission.",
+    "category": "Revenue cycle management / claims preparation",
+    "userType": "Provider-facing. Used by clinical and billing staff at the practice; not a patient-facing application.",
+    "accessModel": "system",
+    "accessModelNote": "Population/system access authorized by the practice under 45 CFR 170.404(a)(4), typically via the client-credentials flow. Ruby is not a patient-directed app and does not use patient-context authorization.",
+    "redirectUris": ["https://ehr-integration-management-system.onrender.com/oauth/callback"],
+    "launchUrl": null,
+    "needsConfirmation": true,
+    "confirmationNote": "Redirect URI points at the internal management system host. Replace with Ruby's production callback before any packet is submitted -- a vendor registers this value and changing it later means re-registering."
+  },
+
+  "requestedScopes": [
+    {
+      "resource": "Patient",
+      "scope": "system/Patient.read",
+      "justification": "Patient identity and demographics populate the subscriber and patient fields of the claim. A claim rejects on a demographic mismatch with the payer's member record."
+    },
+    {
+      "resource": "Encounter",
+      "scope": "system/Encounter.read",
+      "justification": "Date of service, place of service, and encounter type are required claim fields and determine which CPT codes are billable."
+    },
+    {
+      "resource": "Condition",
+      "scope": "system/Condition.read",
+      "justification": "Diagnoses supply the ICD-10 codes on the claim and establish medical necessity for the procedures billed. Missing or unsupported diagnosis coding is a leading denial reason."
+    },
+    {
+      "resource": "Procedure",
+      "scope": "system/Procedure.read",
+      "justification": "Procedures performed supply the CPT/HCPCS codes and units billed."
+    },
+    {
+      "resource": "Coverage",
+      "scope": "system/Coverage.read",
+      "justification": "Payer, plan, member ID, and coverage period determine where the claim is routed and whether it is within the filing window."
+    },
+    {
+      "resource": "Practitioner",
+      "scope": "system/Practitioner.read",
+      "justification": "Rendering and billing provider NPI are required claim fields."
+    },
+    {
+      "resource": "Organization",
+      "scope": "system/Organization.read",
+      "justification": "Billing entity, tax ID, and service facility location are required claim fields."
+    },
+    {
+      "resource": "DocumentReference",
+      "scope": "system/DocumentReference.read",
+      "justification": "The clinical note is the evidence for the codes asserted. It supports the claim on submission and is what an appeal is built from if the claim is denied."
+    }
+  ],
+
+  "scopePosture": {
+    "writeAccess": false,
+    "writeAccessNote": "Ruby requests read-only access. It does not write to the EHR; the provider reviews and submits the claim from Ruby.",
+    "minimumNecessary": "Scopes are requested per 45 CFR 164.502(b) minimum necessary. Ruby requests no resource it does not place on a claim or use to substantiate one, and requests no write scope.",
+    "bulkExport": false
+  },
+
+  "security": {
+    "hipaaStatus": "in_progress",
+    "soc2Status": "in_progress",
+    "statement": "Ruby Health LLC is actively pursuing HIPAA compliance and SOC 2 certification. Neither is complete as of this submission.",
+    "willSignBaa": true,
+    "encryptionInTransit": "TLS 1.2+",
+    "encryptionAtRest": true,
+    "auditLogging": "Every PHI access is logged with actor, purpose, resource, and timestamp, retained for six years per 45 CFR 164.312(b).",
+    "penetrationTest": null,
+    "needsConfirmation": true,
+    "confirmationNote": "Stated as supplied: both HIPAA and SOC 2 are pending. Do not upgrade this language. Vendors ask, and an overstated compliance posture that turns out to be false is a materially worse problem than an honest 'in progress' -- athenahealth and other incumbents verify. The encryption and audit-logging claims above describe intended design and should be confirmed against what is actually deployed before submission."
+  },
+
+  "regulatoryPosture": {
+    "citations": {
+      "accessObligation": "45 CFR 170.404(b)(1)",
+      "verificationDeadline": "45 CFR 170.404(b)(1)(i)",
+      "productionDeadline": "45 CFR 170.404(b)(1)(ii)",
+      "practiceAuthorization": "45 CFR 170.404(a)(4)",
+      "feeLimits": "45 CFR 170.404(a)(3)",
+      "transparency": "45 CFR 170.404(a)(2)"
+    },
+    "note": "Ruby requests access as an API User under the ONC Health IT Certification Program's API Condition of Certification. Practice authorization is obtained separately from and in addition to vendor registration."
+  }
+}

@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: ehr-integration-management-system
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ehr-access-registry
+          property: connectionString
+      - key: CHPL_API_KEY
+        sync: false
+      - key: NOTION_TOKEN
+        sync: false
+      - key: NOTION_DATA_SOURCE_ID
+        sync: false
+
+  # Daily deadline check. The whole point of tracking the 170.404 clocks is
+  # noticing a missed deadline on the day it is missed, not weeks later.
+  - type: cron
+    name: ehr-clock-check
+    runtime: node
+    plan: starter
+    schedule: "0 15 * * 1-5"  # 08:00 America/Los_Angeles, weekdays (UTC)
+    buildCommand: npm install && npm run build
+    startCommand: node dist/jobs/checkClocks.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ehr-access-registry
+          property: connectionString
+      - key: NOTION_TOKEN
+        sync: false
+      - key: NOTION_DATA_SOURCE_ID
+        sync: false
+
+databases:
+  - name: ehr-access-registry
+    plan: free
+    postgresMajorVersion: "16"

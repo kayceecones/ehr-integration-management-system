@@ -1,0 +1,59 @@
+{
+  "$comment": [
+    "The three vendors in the current working set, chosen for contrasting posture.",
+    "",
+    "Identity fields here are starting points for the CHPL sync to confirm and",
+    "correct -- chplDeveloperId is null until the sync resolves it, and nothing",
+    "downstream should treat these as authoritative before that happens.",
+    "",
+    "The `requirements` arrays are intentionally EMPTY. Requirements carry",
+    "provenance by design, and hand-writing plausible-looking values with",
+    "invented snippets would defeat the entire point of that design. Run the",
+    "extractor to populate them from the vendors' actually-published terms."
+  ],
+
+  "vendors": [
+    {
+      "name": "Canvas Medical",
+      "chplDeveloperId": null,
+      "segment": "ambulatory",
+      "website": "https://www.canvasmedical.com",
+      "developerPortalUrl": "https://docs.canvasmedical.com/api/developer-access/",
+      "apiDocumentationUrl": "https://docs.canvasmedical.com/",
+      "termsUrl": null,
+      "contactEmail": null,
+      "inScope": true,
+      "posture": "developer-first",
+      "whyInScope": "Publishes its third-party developer access process openly, including the distinction between patient-directed and population/system access. The easy case -- if the system cannot produce a clean packet here, something is wrong with the system rather than the vendor.",
+      "requirements": []
+    },
+    {
+      "name": "athenahealth",
+      "chplDeveloperId": null,
+      "segment": "ambulatory",
+      "website": "https://www.athenahealth.com",
+      "developerPortalUrl": null,
+      "apiDocumentationUrl": null,
+      "termsUrl": null,
+      "contactEmail": null,
+      "inScope": true,
+      "posture": "incumbent",
+      "whyInScope": "Large incumbent with a heavier partner program and significant share among independent ambulatory practices. The hard case -- where published terms and actual practice are most likely to diverge, and where the regulatory deadlines matter most.",
+      "requirements": []
+    },
+    {
+      "name": "Elation Health",
+      "chplDeveloperId": null,
+      "segment": "ambulatory",
+      "website": "https://www.elationhealth.com",
+      "developerPortalUrl": null,
+      "apiDocumentationUrl": null,
+      "termsUrl": null,
+      "contactEmail": null,
+      "inScope": true,
+      "posture": "mid-market",
+      "whyInScope": "Built specifically for independent primary care, which is closest to Ruby's actual buyer. The realistic case.",
+      "requirements": []
+    }
+  ]
+}
