@@ -29,7 +29,8 @@
         "https://docs.canvasmedical.com/api/developer-access/",
         "https://docs.canvasmedical.com/api/terms-of-use/",
         "https://docs.canvasmedical.com/api/service-base-urls/",
-        "https://docs.canvasmedical.com/api/customer-authentication/"
+        "https://docs.canvasmedical.com/api/customer-authentication/",
+        "https://www.canvasmedical.com/compliance/onc/mandatory-disclosures"
       ],
       "inScope": true,
       "posture": "developer-first",

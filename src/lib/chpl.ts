@@ -29,17 +29,34 @@ export interface ChplCriterion {
   title?: string;
 }
 
+/**
+ * A listing as /search/v3 actually returns it. Several fields that read like
+ * scalars are objects or arrays keyed by criterion -- discovered the first
+ * time the sync ran against the live API, not from the docs.
+ */
+export interface ChplCriterionRef {
+  id: number;
+  number: string;
+  title?: string;
+}
+
+export interface ChplCriterionValue {
+  criterion: ChplCriterionRef;
+  value: string | null;
+}
+
 export interface ChplListing {
   id: number;
   chplProductNumber: string;
-  developer: { id: number; name: string; website?: string | null };
+  developer: { id: number; name: string; website?: string | null; status?: unknown };
   product: { id: number; name: string };
   version?: { id: number; name: string } | null;
-  certificationStatus?: string;
+  certificationStatus?: { id: number; name: string } | string | null;
   certificationDate?: number | string;
-  criteriaMet?: string[];
-  apiDocumentation?: string | null;
-  serviceBaseUrlList?: string | null;
+  criteriaMet?: (ChplCriterionRef | string)[];
+  /** One entry per criterion the developer published documentation for. */
+  apiDocumentation?: ChplCriterionValue[] | string | null;
+  serviceBaseUrlList?: ChplCriterionValue | string | null;
   mandatoryDisclosures?: string | null;
 }
 
@@ -76,23 +93,46 @@ function apiKey(): string {
   return key;
 }
 
+/**
+ * CHPL rate-limits API keys and answers with a 429 when paging quickly. We
+ * wait out `Retry-After` when it is sent, back off exponentially when it is
+ * not, and give up after a bounded number of attempts rather than hammering
+ * a government service. Pacing between pages is handled in searchListings.
+ */
+const MAX_ATTEMPTS = 6;
+const PAGE_DELAY_MS = Number(process.env.CHPL_PAGE_DELAY_MS ?? 1000);
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function get<T>(path: string, params: Record<string, string | number> = {}): Promise<T> {
   const url = new URL(`${BASE_URL}${path}`);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
 
-  const res = await fetch(url, {
-    headers: { 'API-Key': apiKey(), Accept: 'application/json' },
-  });
+  for (let attempt = 1; ; attempt++) {
+    const res = await fetch(url, {
+      headers: { 'API-Key': apiKey(), Accept: 'application/json' },
+    });
 
-  if (!res.ok) {
+    if (res.ok) return (await res.json()) as T;
+
     const body = await res.text().catch(() => '');
-    throw new ChplError(
-      `CHPL ${res.status} ${res.statusText} for ${url.pathname}`,
-      res.status,
-      body.slice(0, 500),
-    );
+    const retryable = res.status === 429 || res.status >= 500;
+    if (!retryable || attempt >= MAX_ATTEMPTS) {
+      throw new ChplError(
+        `CHPL ${res.status} ${res.statusText} for ${url.pathname}` +
+          (attempt > 1 ? ` after ${attempt} attempts` : ''),
+        res.status,
+        body.slice(0, 500),
+      );
+    }
+    const retryAfter = Number(res.headers.get('retry-after'));
+    const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+      ? retryAfter * 1000
+      : Math.min(30_000, 1000 * 2 ** (attempt - 1));
+    await sleep(waitMs);
   }
-  return (await res.json()) as T;
 }
 
 /** The full criteria vocabulary, used to resolve criterion numbers to ids. */
@@ -146,6 +186,7 @@ export async function searchListings(opts: SearchOptions = {}): Promise<ChplList
     });
     out.push(...res.results);
     if (out.length >= res.recordCount || res.results.length === 0) break;
+    await sleep(PAGE_DELAY_MS);
   }
   return out;
 }
@@ -160,6 +201,37 @@ export interface VendorRecord {
   serviceBaseUrlList: string | null;
   termsUrl: string | null;
   productNames: string[];
+}
+
+function criterionNumber(c: ChplCriterionRef | string): string {
+  return typeof c === 'string' ? c : c.number;
+}
+
+function statusName(s: ChplListing['certificationStatus']): string | null {
+  if (!s) return null;
+  return typeof s === 'string' ? s : s.name;
+}
+
+/**
+ * Pick the documentation link that goes with the API criterion. A listing
+ * publishes one link per criterion; the (g)(10) one is the terms the
+ * extractor should read. Falls back to any API criterion, then to the first.
+ */
+function apiDocumentationUrl(doc: ChplListing['apiDocumentation']): string | null {
+  if (!doc) return null;
+  if (typeof doc === 'string') return doc || null;
+  const wanted = API_CRITERIA.map((c) => c.replace(/\s+/g, ''));
+  const byPriority = [...doc].sort((a, b) => {
+    const ia = wanted.indexOf(a.criterion.number.replace(/\s+/g, ''));
+    const ib = wanted.indexOf(b.criterion.number.replace(/\s+/g, ''));
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+  return byPriority.find((d) => d.value)?.value ?? null;
+}
+
+function serviceBaseUrl(list: ChplListing['serviceBaseUrlList']): string | null {
+  if (!list) return null;
+  return typeof list === 'string' ? list || null : list.value || null;
 }
 
 /**
@@ -181,7 +253,7 @@ export function collapseToVendors(listings: ChplListing[]): VendorRecord[] {
         name: l.developer.name,
         website: l.developer.website ?? null,
         certifiedCriteria: [],
-        chplStatus: l.certificationStatus ?? null,
+        chplStatus: statusName(l.certificationStatus),
         apiDocumentationUrl: null,
         serviceBaseUrlList: null,
         termsUrl: null,
@@ -191,14 +263,15 @@ export function collapseToVendors(listings: ChplListing[]): VendorRecord[] {
     }
 
     for (const c of l.criteriaMet ?? []) {
-      if (!rec.certifiedCriteria.includes(c)) rec.certifiedCriteria.push(c);
+      const n = criterionNumber(c);
+      if (!rec.certifiedCriteria.includes(n)) rec.certifiedCriteria.push(n);
     }
     if (!rec.productNames.includes(l.product.name)) rec.productNames.push(l.product.name);
 
     // Keep the first non-empty link we see for each. Listings from the same
     // developer normally point at the same documentation.
-    rec.apiDocumentationUrl ??= l.apiDocumentation || null;
-    rec.serviceBaseUrlList ??= l.serviceBaseUrlList || null;
+    rec.apiDocumentationUrl ??= apiDocumentationUrl(l.apiDocumentation);
+    rec.serviceBaseUrlList ??= serviceBaseUrl(l.serviceBaseUrlList);
     rec.termsUrl ??= l.mandatoryDisclosures || null;
   }
 

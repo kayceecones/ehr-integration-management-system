@@ -42,6 +42,20 @@ trailing-slash-insensitive key now, and a fetch that redirects onto a page we
 already hold is dropped. Harmless here, but a duplicate page doubles the
 extractor's input and would have double-counted in the sync log.
 
+**CHPL's search response is not the shape the client assumed.** The first
+live sync crashed: `criteriaMet` is `{id, number, title}[]` not `string[]`,
+`certificationStatus` is `{id, name}`, `apiDocumentation` is one
+`{criterion, value}` per criterion, and `serviceBaseUrlList` is a single
+`{criterion, value}`. `collapseToVendors` now reads both shapes, prefers the
+(g)(10) documentation link, and `src/lib/__tests__/chpl.test.ts` pins the
+real shape. Unit tests with hand-written fixtures could not have caught this;
+only the live call did.
+
+**CHPL rate-limits paging.** Eight pages of 100 in quick succession drew a
+429. The client now honours `Retry-After`, backs off exponentially otherwise,
+gives up after six attempts, and sleeps a second between pages
+(`CHPL_PAGE_DELAY_MS`).
+
 ## Design decisions that are load-bearing
 
 **Provenance is enforced by the type, not by convention.** `ExtractedField`

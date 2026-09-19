@@ -13,7 +13,7 @@ The output of this system may end up in a regulatory complaint. That is the stan
 ## Commands
 
 ```bash
-npm test              # 116 assertions; no database or API key needed
+npm test              # 130 assertions; no database or API key needed
 npx tsc --noEmit      # must be clean
 npm run build         # tsc + copies runtime assets into dist/
 npm run migrate       # idempotent
