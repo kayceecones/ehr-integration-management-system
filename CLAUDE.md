@@ -13,7 +13,7 @@ The output of this system may end up in a regulatory complaint. That is the stan
 ## Commands
 
 ```bash
-npm test              # 130 assertions; no database or API key needed
+npm test              # 136 assertions; no database or API key needed
 npx tsc --noEmit      # must be clean
 npm run build         # tsc + copies runtime assets into dist/
 npm run migrate       # idempotent
@@ -88,6 +88,7 @@ If you touch `checkCompliance`, remember what it is matching: contract language 
 
 * A non-compete reads "Partner agrees not to compete", which `/non-?compet/` misses entirely.
 * "No fees are charged" trips a naive `/fee|charge/` test, flagging the most compliant vendors hardest — and noisy flags train the reader to ignore flags.
+* Canvas's "We do **not** condition access on … non-compete or exclusive-dealing terms … fees or royalties" was flagged as three violations on the first live run. `disclaimsProhibitedConditions` handles negation of *conditioning*; `undertakesProhibitedCondition` makes sure "Partner shall not compete" — a real non-compete phrased with "not" — is still caught.
 
 Add a test case for every new pattern. `src/lib/__tests__/extract.test.ts`.
 

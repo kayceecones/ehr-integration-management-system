@@ -194,6 +194,39 @@ function statesNoFee(value: string): boolean {
     || /\b(?:free\s+of\s+charge|at\s+no\s+cost|no\s+charge)\b/.test(v);
 }
 
+/**
+ * Whether a prohibited-conditions value is a vendor DISCLAIMING the
+ * conditions rather than imposing them.
+ *
+ * The first live extraction hit this: Canvas Medical writes "We do not
+ * condition access on ... non-compete or exclusive-dealing terms ... fees or
+ * royalties", and the naive word match flagged the single most compliant
+ * sentence a vendor can publish as three violations. Same failure as "No fees
+ * are charged" -- and the same cost: flags on the clean vendors teach the
+ * reader that flags mean nothing.
+ *
+ * The negation has to be about CONDITIONING or IMPOSING, not about competing:
+ * "Partner shall not compete" is a real non-compete phrased with "not", and
+ * must still be caught. That is what `undertakesProhibitedCondition` guards.
+ */
+function disclaimsProhibitedConditions(text: string): boolean {
+  const v = text.toLowerCase();
+  return /\b(?:do|does|did|will|shall|would)\s+not\s+(?:condition|impose|require|restrict)\b/.test(v)
+    || /\bnot\s+condition(?:ed|al)?\s+(?:on|upon)\b/.test(v)
+    || /\b(?:imposes?|contains?|includes?|has|have|carries|carry|requires?)\s+no\b/.test(v)
+    || /\bno\s+(?:non-?compet|exclusiv|revenue[-\s]?shar|royalt)/.test(v)
+    || /\b(?:without|free\s+of|free\s+from)\s+(?:any\s+)?(?:non-?compet|exclusiv|revenue[-\s]?shar|royalt)/.test(v);
+}
+
+/** An affirmative undertaking of a prohibited condition, in any phrasing. */
+function undertakesProhibitedCondition(text: string): boolean {
+  const v = text.toLowerCase();
+  return /(?:agrees?|shall|must|will|undertakes?)\s+not\s+(?:to\s+)?compet/.test(v)
+    || /\brefrain\s+from\s+compet|restrict\w*\s+from\s+compet/.test(v)
+    || /\bdeal\s+exclusively|\bexclusive(?:ly)?\s+(?:with|to)\b|\bsole(?:ly)?\s+with\b/.test(v)
+    || /\b(?:pay|owe|remit|share)\b[^.]{0,80}\b(?:royalt|revenue[-\s]?shar|percentage\s+of\s+(?:revenue|sales))/.test(v);
+}
+
 export function checkCompliance(fields: ExtractedField[]): ComplianceFlag[] {
   const flags: ComplianceFlag[] = [];
   const byName = new Map(fields.map((f) => [f.field, f]));
@@ -205,8 +238,11 @@ export function checkCompliance(fields: ExtractedField[]): ComplianceFlag[] {
     // "Partner agrees not to compete" never contains the string "non-compete"
     // -- so each pattern covers both the noun and the undertaking.
     const v = `${prohibited.value} ${prohibited.snippet}`.toLowerCase();
-    const hits = [
-      ['a non-compete', /non-?compet|(?:not|refrain from|shall not|agrees? not)\s+to\s+compet|restrict\w*\s+from\s+compet/],
+    // A vendor saying it does NOT impose these conditions is the compliant
+    // case, not a hit -- unless the same text also undertakes one.
+    const disclaimed = disclaimsProhibitedConditions(v) && !undertakesProhibitedCondition(v);
+    const hits = disclaimed ? [] : [
+      ['a non-compete', /non-?compet|(?:not|refrain from|shall not|must not|will not|agrees? not)\s+(?:to\s+)?compet|restrict\w*\s+from\s+compet/],
       ['exclusivity', /exclusiv|deal\s+exclusively|sole(?:ly)?\s+with/],
       ['a revenue share or royalty', /revenue[-\s]?shar|royalt|percentage\s+of\s+(?:revenue|sales)/],
     ] as const;

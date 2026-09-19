@@ -56,6 +56,16 @@ only the live call did.
 gives up after six attempts, and sleeps a second between pages
 (`CHPL_PAGE_DELAY_MS`).
 
+**A vendor disclaiming prohibited conditions was flagged as imposing them.**
+The first live extraction of Canvas Medical produced three "violation"
+flags from the sentence "We do not condition access on ... non-compete or
+exclusive-dealing terms ... fees or royalties" -- the most compliant sentence
+a vendor can publish. Same class as the fee bug. The check now recognises a
+negation of conditioning/imposing, but not a negation of competing:
+"Developer shall not compete" is a real non-compete and is still flagged
+(and the original pattern had missed that phrasing too, because it required
+a "to" after "not").
+
 ## Design decisions that are load-bearing
 
 **Provenance is enforced by the type, not by convention.** `ExtractedField`

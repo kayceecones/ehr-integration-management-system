@@ -120,7 +120,7 @@ npm start
 ```
 
 The scripts load `.env` when it exists. `npm test` runs the clock, extraction,
-terms-verification, and name-matching suites (130 assertions, no database or
+terms-verification, and name-matching suites (136 assertions, no database or
 API key required).
 
 ## How extraction works

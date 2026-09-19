@@ -184,7 +184,7 @@ export async function gatherSources(
   seedUrls: string[],
   opts: { maxPages?: number; follow?: boolean } = {},
 ): Promise<GatherResult> {
-  const maxPages = opts.maxPages ?? 8;
+  const maxPages = opts.maxPages ?? 12;
   const follow = opts.follow ?? true;
   const pages: SourcePage[] = [];
   const failures: GatherResult['failures'] = [];

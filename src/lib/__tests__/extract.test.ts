@@ -77,6 +77,41 @@ const revShare = checkCompliance([
 ]);
 check('revenue share flagged', revShare.some(f => f.citation === '45 CFR 170.404(a)(4)'), true);
 
+// The compliant case, verbatim from Canvas Medical's developer-access page.
+// Found live: the naive word match flagged this as three violations.
+const canvasDisclaimer = 'We do not condition access on fees or royalties for the rights the API Condition of Certification protects, non-compete or exclusive-dealing terms, unrelated licenses, transfer of your intellectual property, Canvas-specific testing or certification, or reciprocal access to your application\u2019s data.';
+const disclaimed = checkCompliance([
+  field({ field: 'prohibited_conditions', value: 'Canvas states it imposes no fees/royalties for protected rights, no non-compete or exclusive-dealing terms, no unrelated licenses, no IP transfer.', snippet: canvasDisclaimer }),
+  field({ field: 'registration_url', value: 'https://t.test/reg' }),
+]);
+check('vendor disclaiming prohibited conditions is not flagged', disclaimed.length, 0);
+
+for (const phrasing of [
+  'Access is not conditioned on exclusivity or any revenue share.',
+  'There is no non-compete requirement.',
+  'Registration is free of any exclusivity obligation.',
+]) {
+  const r = checkCompliance([
+    field({ field: 'prohibited_conditions', value: phrasing, snippet: phrasing }),
+    field({ field: 'registration_url', value: 'https://t.test/reg' }),
+  ]);
+  check(`disclaimer phrasing not flagged: "${phrasing.slice(0, 40)}..."`, r.length, 0);
+}
+
+// A disclaimer that also contains an undertaking is still flagged: the
+// negation must be about conditioning, not about competing.
+const mixed = checkCompliance([
+  field({ field: 'prohibited_conditions', value: 'We do not condition access on fees. Partner agrees not to compete with Vendor.', snippet: 'We do not condition access on fees. Partner agrees not to compete with Vendor.' }),
+  field({ field: 'registration_url', value: 'https://t.test/reg' }),
+]);
+check('disclaimer plus undertaking still flagged', mixed.some(f => f.citation === '45 CFR 170.404(a)(4)'), true);
+
+const shallNot = checkCompliance([
+  field({ field: 'prohibited_conditions', value: 'Developer shall not compete with Vendor.', snippet: 'Developer shall not compete with Vendor.' }),
+  field({ field: 'registration_url', value: 'https://t.test/reg' }),
+]);
+check('"shall not compete" still flagged', shallNot.some(f => f.citation === '45 CFR 170.404(a)(4)'), true);
+
 const docFee = checkCompliance([
   field({ field: 'fees', value: 'Access to the API documentation requires a $500 fee.', snippet: 'Documentation access: $500.' }),
   field({ field: 'registration_url', value: 'https://t.test/reg' }),
