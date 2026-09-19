@@ -152,6 +152,7 @@ everything else still runs.
 
 | Method | Path | What it does |
 | --- | --- | --- |
+| GET | `/` | This index |
 | GET | `/health` | Liveness |
 | GET | `/vendors` | In-scope vendors (`?all=true` for the full registry) |
 | GET | `/requests` | Requests with freshly recomputed clocks |

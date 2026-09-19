@@ -27,6 +27,22 @@ function profile(): RubyProfile {
 
 const app = Fastify({ logger: true });
 
+/** An index, so the front door is not a 404. */
+app.get('/', async () => ({
+  name: 'EHR Integration Management System',
+  description: 'Tracks API access requests to ONC-certified EHR vendors under 45 CFR 170.404. Read-mostly; nothing here contacts a vendor.',
+  endpoints: {
+    'GET /health': 'Liveness',
+    'GET /vendors': 'In-scope vendors (?all=true for the full registry)',
+    'GET /requests': 'Access requests with freshly recomputed clocks',
+    'GET /vendors/:id/requirements': 'Extracted requirements with provenance, plus compliance flags',
+    'GET /vendors/:id/packet': 'Submission packet (?format=markdown for the raw text)',
+    'GET /requests/:id/complaint': 'Complaint draft; 409 if the request is not actually in breach',
+    'POST /requests/:id/dates': 'Record that a request was sent / verified / enabled',
+    'POST /jobs/clocks': 'Re-run the deadline classification now',
+  },
+}));
+
 app.get('/health', async () => ({ ok: true, at: new Date().toISOString() }));
 
 app.get('/vendors', async (req) => {
