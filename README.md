@@ -104,6 +104,7 @@ src/
   jobs/checkClocks.ts    Deadline classification (on demand)
   jobs/extractTerms.ts   Reads each vendor's published terms into the registry
   profile/ruby-health.json  Ruby's canonical facts
+  ui/index.html          The UI: one static page over the API, served at /
   server.ts              Fastify API
 ```
 
@@ -152,13 +153,15 @@ everything else still runs.
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| GET | `/` | This index |
+| GET | `/` | The UI (vendors, requirements, packets, request clocks) |
+| GET | `/api` | JSON index of these endpoints |
 | GET | `/health` | Liveness |
 | GET | `/vendors` | In-scope vendors (`?all=true` for the full registry) |
 | GET | `/requests` | Requests with freshly recomputed clocks |
 | GET | `/vendors/:id/requirements` | Extracted requirements with provenance, plus compliance flags |
 | GET | `/vendors/:id/packet` | Submission packet (`?format=markdown` for the raw text) |
 | GET | `/requests/:id/complaint` | Complaint draft; **409 if the request is not actually in breach** |
+| POST | `/requests` | Open a request to track for a vendor (`{ vendorId }`) |
 | POST | `/requests/:id/dates` | Record that a request was sent / verified / enabled |
 | POST | `/jobs/clocks` | Re-run the deadline classification now |
 

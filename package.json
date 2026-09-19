@@ -16,7 +16,7 @@
     "clocks": "node --env-file-if-exists=.env --experimental-strip-types src/jobs/checkClocks.ts",
     "extract": "node --env-file-if-exists=.env --experimental-strip-types src/jobs/extractTerms.ts",
     "test": "node --experimental-strip-types src/lib/__tests__/businessDays.test.ts && node --experimental-strip-types src/lib/__tests__/extract.test.ts && node --experimental-strip-types src/lib/__tests__/terms.test.ts && node --experimental-strip-types src/lib/__tests__/chpl.test.ts && node --experimental-strip-types src/jobs/__tests__/syncRegistry.test.ts",
-    "copy-assets": "mkdir -p dist/db dist/profile && cp src/db/*.sql src/db/*.json dist/db/ && cp src/profile/*.json dist/profile/"
+    "copy-assets": "mkdir -p dist/db dist/profile dist/ui && cp src/db/*.sql src/db/*.json dist/db/ && cp src/profile/*.json dist/profile/ && cp src/ui/*.html dist/ui/"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.127.0",

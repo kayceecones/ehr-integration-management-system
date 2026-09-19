@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EHR Access Registry</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --ink: #1c1c1a; --muted: #6b6b66; --line: #e2e2dd;
+    --accent: #2f5d8a; --ok: #2d7a4f; --warn: #b26a00; --bad: #b3261e; --soft: #eef2f6;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151514; --panel: #1f1f1d; --ink: #ecece8; --muted: #a2a29b; --line: #33332f; --accent: #8db4dd; --ok: #6cc38f; --warn: #e6a23c; --bad: #ef7b73; --soft: #262a2f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  header { display: flex; align-items: baseline; gap: 16px; padding: 18px 24px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; font-weight: 650; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  nav { margin-left: auto; display: flex; gap: 4px; }
+  nav button { background: none; border: 1px solid transparent; color: var(--muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font: inherit; }
+  nav button.active { color: var(--ink); border-color: var(--line); background: var(--soft); }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1; min-width: 200px; }
+  h2 { font-size: 16px; margin: 0 0 4px; }
+  h3 { font-size: 14px; margin: 18px 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .muted { color: var(--muted); font-size: 13px; }
+  a { color: var(--accent); }
+  button.btn { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+  button.btn:hover { background: var(--soft); }
+  button.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.btn:disabled { opacity: .5; cursor: default; }
+  .badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .badge.ok { color: var(--ok); border-color: var(--ok); }
+  .badge.warn { color: var(--warn); border-color: var(--warn); }
+  .badge.bad { color: var(--bad); border-color: var(--bad); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  td.k { white-space: nowrap; font-family: var(--mono); font-size: 13px; }
+  blockquote { margin: 6px 0 0; padding: 6px 10px; border-left: 3px solid var(--line); color: var(--muted); font-size: 13px; }
+  .conf { font-family: var(--mono); font-size: 12px; }
+  .flag { border-left: 3px solid var(--warn); padding: 8px 12px; margin: 8px 0; background: var(--soft); border-radius: 0 6px 6px 0; font-size: 14px; }
+  .flag.violation { border-left-color: var(--bad); }
+  .md { line-height: 1.55; }
+  .md h1 { font-size: 20px; margin: 18px 0 8px; } .md h2 { font-size: 17px; margin: 22px 0 6px; } .md h3 { font-size: 15px; margin: 16px 0 4px; color: var(--muted); text-transform: none; letter-spacing: 0; }
+  .md p { margin: 6px 0; } .md ul { margin: 4px 0 8px; padding-left: 22px; } .md code { font-family: var(--mono); font-size: 13px; background: var(--soft); padding: 1px 4px; border-radius: 3px; }
+  .md blockquote { margin: 6px 0; }
+  .md table { margin: 8px 0 12px; } .md th, .md td { font-size: 13px; }
+  pre { white-space: pre-wrap; font-family: var(--mono); font-size: 13px; background: var(--soft); padding: 12px; border-radius: 8px; overflow: auto; }
+  form.dates { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; align-items: end; }
+  label { display: block; font-size: 12px; color: var(--muted); }
+  input[type=date] { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); width: 100%; }
+  .notice { font-size: 13px; color: var(--muted); border: 1px dashed var(--line); padding: 8px 12px; border-radius: 8px; margin-top: 12px; }
+  .err { color: var(--bad); }
+  ul.items { margin: 4px 0 0; padding-left: 20px; } ul.items li { margin: 3px 0; }
+  .empty { color: var(--muted); padding: 24px; text-align: center; }
+  @media (max-width: 640px) { header { padding: 14px 16px; } nav { margin-left: 0; } th:nth-child(4), td:nth-child(4) { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>EHR Access Registry</h1>
+  <span class="sub">Ruby Health · 45 CFR 170.404 access requests</span>
+  <nav>
+    <button data-view="vendors" class="active">Vendors</button>
+    <button data-view="requests">Requests</button>
+  </nav>
+</header>
+<main id="main"><div class="empty">Loading…</div></main>
+
+<script>
+(() => {
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const main = $('#main');
+  let view = 'vendors';
+  let state = { vendors: [], requests: [] };
+
+  async function api(path, opts) {
+    const res = await fetch(path, { headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/markdown' }, ...opts });
+    const text = await res.text();
+    let body; try { body = JSON.parse(text); } catch { body = text; }
+    if (!res.ok) { const err = new Error(typeof body === 'object' && body?.error ? body.error : `${res.status}`); err.status = res.status; err.body = body; throw err; }
+    return body;
+  }
+
+  // A deliberately small Markdown renderer for the packet and complaint
+  // drafts: headings, bullets, blockquotes, bold, inline code, links.
+  function md(src) {
+    const inline = (t) => esc(t)
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+      .replace(/(^|\s)(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>')
+      .replace(/_([^_]+)_/g, '<em>$1</em>');
+    const out = []; let list = null; let para = []; let table = null;
+    const flushPara = () => { if (para.length) { out.push(`<p>${inline(para.join(' '))}</p>`); para = []; } };
+    const flushList = () => { if (list) { out.push(`<ul>${list.join('')}</ul>`); list = null; } };
+    const flushTable = () => {
+      if (!table) return;
+      const [head, ...body] = table;
+      const cells = (r, tag) => r.map((c) => `<${tag}>${inline(c)}</${tag}>`).join('');
+      out.push(`<table><thead><tr>${cells(head, 'th')}</tr></thead><tbody>${body.map((r) => `<tr>${cells(r, 'td')}</tr>`).join('')}</tbody></table>`);
+      table = null;
+    };
+    for (const raw of src.split('\n')) {
+      const line = raw.replace(/\s+$/, '');
+      let m;
+      if (/^\s*\|.*\|\s*$/.test(line)) {
+        flushPara(); flushList();
+        if (/^\s*\|(\s*:?-+:?\s*\|)+\s*$/.test(line)) continue; // header separator
+        (table ??= []).push(line.trim().slice(1, -1).split('|').map((c) => c.trim()));
+        continue;
+      }
+      flushTable();
+      if ((m = /^(#{1,3})\s+(.*)$/.exec(line))) { flushPara(); flushList(); out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); }
+      else if ((m = /^\s*[-*]\s+(.*)$/.exec(line))) { flushPara(); (list ??= []).push(`<li>${inline(m[1])}</li>`); }
+      else if ((m = /^>\s?(.*)$/.exec(line))) { flushPara(); flushList(); out.push(`<blockquote>${inline(m[1])}</blockquote>`); }
+      else if (/^---+$/.test(line)) { flushPara(); flushList(); out.push('<hr>'); }
+      else if (line.trim() === '') { flushPara(); flushList(); }
+      else para.push(line);
+    }
+    flushPara(); flushList(); flushTable();
+    return out.join('\n');
+  }
+
+  const statusClass = (s) => ({ 'on time': 'ok', 'complete': 'ok', 'due soon': 'warn', 'overdue': 'bad' }[s] ?? '');
+
+  async function load() {
+    const [v, r] = await Promise.all([api('/vendors'), api('/requests')]);
+    state = { vendors: v.vendors, requests: r.requests };
+  }
+
+  function render() {
+    document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === view));
+    if (view === 'vendors') renderVendors();
+    else renderRequests();
+  }
+
+  // --- Vendors --------------------------------------------------------------
+
+  function renderVendors() {
+    if (!state.vendors.length) { main.innerHTML = '<div class="empty">No in-scope vendors. Run <code>npm run sync</code>.</div>'; return; }
+    main.innerHTML = state.vendors.map((v) => {
+      const req = state.requests.find((r) => r.vendor_id === v.id);
+      const g10 = v.certified_criteria.some((c) => /\(g\)\(10\)/.test(c));
+      return `<div class="card" data-vendor="${v.id}">
+        <div class="row">
+          <div class="grow">
+            <h2>${esc(v.name)}</h2>
+            <div class="muted">CHPL developer ${esc(v.chpl_developer_id)}
+              ${g10 ? '<span class="badge ok">§170.315(g)(10)</span>' : '<span class="badge bad">no (g)(10)</span>'}
+              ${v.contact_email ? ` · ${esc(v.contact_email)}` : ''}</div>
+            <div class="muted">
+              ${v.developer_portal_url ? `<a href="${esc(v.developer_portal_url)}" target="_blank" rel="noopener">developer access</a> · ` : ''}
+              ${v.terms_url ? `<a href="${esc(v.terms_url)}" target="_blank" rel="noopener">disclosures</a> · ` : ''}
+              ${v.api_documentation_url ? `<a href="${esc(v.api_documentation_url)}" target="_blank" rel="noopener">API docs</a>` : ''}
+            </div>
+          </div>
+          <div class="row">
+            ${req ? `<span class="badge ${statusClass(req.clock.status)}">${esc(req.clock.status)}</span>` : `<button class="btn" data-act="track">Track a request</button>`}
+            <button class="btn" data-act="requirements">Requirements</button>
+            <button class="btn primary" data-act="packet">Packet</button>
+          </div>
+        </div>
+        <div class="detail"></div>
+      </div>`;
+    }).join('');
+  }
+
+  async function showRequirements(card, id) {
+    const d = $('.detail', card); d.innerHTML = '<div class="muted">Loading…</div>';
+    const { fields, flags } = await api(`/vendors/${id}/requirements`);
+    if (!fields.length) { d.innerHTML = `<div class="notice">Nothing extracted yet. Run <code>npm run extract -- --vendor "…"</code>.</div>`; return; }
+    const rows = fields.map((f) => {
+      const low = f.value !== null && f.confidence < 0.75;
+      return `<tr>
+        <td class="k">${esc(f.field)}</td>
+        <td>${f.value === null ? '<span class="muted">Vendor does not state this</span>' : esc(f.value)}
+          ${f.snippet ? `<blockquote>${esc(f.snippet)}</blockquote>` : ''}</td>
+        <td class="conf">${f.confidence.toFixed(2)} ${low ? '<span class="badge warn">low</span>' : ''}</td>
+        <td class="muted"><a href="${esc(f.sourceUrl)}" target="_blank" rel="noopener">source</a><br>${esc(f.retrievedAt.slice(0, 10))}</td>
+      </tr>`;
+    }).join('');
+    const flagHtml = flags.length
+      ? flags.map((f) => `<div class="flag ${f.severity}"><strong>${esc(f.severity)}</strong> · ${esc(f.citation)} — ${esc(f.summary)}<blockquote>${esc(f.evidence)}</blockquote></div>`).join('')
+      : '<div class="muted">No compliance flags raised by these terms.</div>';
+    d.innerHTML = `<h3>Extracted requirements (${fields.length})</h3>
+      <table><thead><tr><th>Field</th><th>What the vendor says · verbatim source</th><th>Conf.</th><th>Source</th></tr></thead><tbody>${rows}</tbody></table>
+      <h3>Compliance flags</h3>${flagHtml}
+      <div class="notice">Flags are heuristics over legal prose — a prompt to read the quoted sentence, never a conclusion.</div>`;
+  }
+
+  async function showPacket(card, id) {
+    const d = $('.detail', card); d.innerHTML = '<div class="muted">Generating…</div>';
+    const p = await api(`/vendors/${id}/packet`);
+    const items = p.openItems.length ? `<ul class="items">${p.openItems.map((o) => `<li>${esc(o)}</li>`).join('')}</ul>` : '<div class="muted">None.</div>';
+    d.innerHTML = `<div class="row" style="margin-top:12px">
+        <span class="badge ${p.readyToSend ? 'ok' : 'warn'}">${p.readyToSend ? 'ready to send' : `${p.openItems.length} open item${p.openItems.length === 1 ? '' : 's'} before sending`}</span>
+        <button class="btn" data-act="copy">Copy markdown</button>
+      </div>
+      <h3>Open items</h3>${items}
+      <h3>Draft packet</h3><div class="md">${md(p.markdown)}</div>
+      <div class="notice">This is a draft. Nothing here sends it — review it, then send it yourself to the vendor's published developer contact.</div>`;
+    $('[data-act=copy]', d).onclick = async (e) => {
+      await navigator.clipboard.writeText(p.markdown);
+      e.target.textContent = 'Copied'; setTimeout(() => (e.target.textContent = 'Copy markdown'), 1500);
+    };
+  }
+
+  async function trackRequest(vendorId) {
+    await api('/requests', { method: 'POST', body: JSON.stringify({ vendorId }) });
+    await load(); view = 'requests'; render();
+  }
+
+  // --- Requests -------------------------------------------------------------
+
+  function renderRequests() {
+    const rerun = `<div class="row" style="margin-bottom:14px"><span class="muted grow">Clocks are recomputed on every load; the stored status (what Notion mirrors) refreshes when a date is recorded or on demand.</span><button class="btn" data-act="clocks">Re-run clock check</button></div>`;
+    if (!state.requests.length) { main.innerHTML = `${rerun}<div class="empty">No access requests tracked yet. Open a vendor and choose <em>Track a request</em>.</div>`; bindGlobal(); return; }
+    main.innerHTML = rerun + state.requests.map((r) => {
+      const c = r.clock;
+      const dl = c.activeDeadline ? `${esc(c.activeStage)} due ${esc(c.activeDeadline)} · ${c.businessDaysRemaining} business day${Math.abs(c.businessDaysRemaining) === 1 ? '' : 's'} ${c.businessDaysRemaining < 0 ? 'overdue' : 'left'}` : '';
+      return `<div class="card" data-request="${r.id}">
+        <div class="row">
+          <div class="grow">
+            <h2>${esc(r.vendor_name)}</h2>
+            <div class="muted">${dl || (c.status === 'complete' ? 'Production enabled.' : 'Clock starts when the vendor receives the request.')}</div>
+          </div>
+          <span class="badge ${statusClass(c.status)}">${esc(c.status)}</span>
+          ${r.blocking_concern ? `<span class="badge bad" title="${esc(r.blocking_note ?? '')}">blocking concern</span>` : ''}
+          ${c.breach ? `<button class="btn" data-act="complaint">Complaint draft</button>` : ''}
+        </div>
+        <form class="dates" style="margin-top:12px">
+          <div><label>Request received by vendor</label><input type="date" name="requestSent" value="${esc(r.request_sent ?? '')}"></div>
+          <div><label>Verification completed ${r.verification_due ? `<span class="muted">(due ${esc(r.verification_due)})</span>` : ''}</label><input type="date" name="verificationCompleted" value="${esc(r.verification_completed ?? '')}"></div>
+          <div><label>Production enabled ${r.production_due ? `<span class="muted">(due ${esc(r.production_due)})</span>` : ''}</label><input type="date" name="productionEnabled" value="${esc(r.production_enabled ?? '')}"></div>
+          <div><button class="btn primary" type="submit">Record dates</button></div>
+        </form>
+        ${c.breach ? `<div class="flag violation">Deadline missed: ${esc(c.breach.stage)} was due ${esc(c.breach.deadline)}, ${c.breach.businessDaysOverdue} business days ago · ${esc(c.breach.citation)}</div>` : ''}
+        <div class="detail"></div>
+      </div>`;
+    }).join('');
+    bindGlobal();
+  }
+
+  function bindGlobal() {
+    const b = $('[data-act=clocks]');
+    if (b) b.onclick = async () => { b.disabled = true; await api('/jobs/clocks', { method: 'POST' }); await load(); render(); };
+  }
+
+  async function recordDates(card, id, form) {
+    const body = {};
+    for (const [k, v] of new FormData(form)) if (v) body[k] = v;
+    await api(`/requests/${id}/dates`, { method: 'POST', body: JSON.stringify(body) });
+    await load(); render();
+  }
+
+  async function showComplaint(card, id) {
+    const d = $('.detail', card); d.innerHTML = '<div class="muted">Drafting…</div>';
+    try {
+      const text = await api(`/requests/${id}/complaint`);
+      d.innerHTML = `<h3>Complaint draft</h3><div class="md">${md(String(text))}</div>
+        <div class="notice">A draft for a person to review. Nothing here files it.</div>`;
+    } catch (err) {
+      d.innerHTML = `<div class="notice">${esc(err.status === 409 ? 'Not in breach — no deadline has been missed, so there is nothing to complain about yet.' : err.message)}</div>`;
+    }
+  }
+
+  // --- Events ---------------------------------------------------------------
+
+  document.querySelector('nav').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-view]'); if (!b) return;
+    view = b.dataset.view; render();
+  });
+
+  main.addEventListener('click', async (e) => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const card = b.closest('.card');
+    const act = b.dataset.act;
+    try {
+      if (card?.dataset.vendor) {
+        const id = Number(card.dataset.vendor);
+        if (act === 'requirements') await showRequirements(card, id);
+        if (act === 'packet') await showPacket(card, id);
+        if (act === 'track') { b.disabled = true; await trackRequest(id); }
+      } else if (card?.dataset.request) {
+        const id = Number(card.dataset.request);
+        if (act === 'complaint') await showComplaint(card, id);
+      }
+    } catch (err) {
+      const d = card ? $('.detail', card) : main;
+      d.innerHTML = `<div class="notice err">${esc(err.message)}</div>`;
+    }
+  });
+
+  main.addEventListener('submit', async (e) => {
+    const form = e.target.closest('form.dates'); if (!form) return;
+    e.preventDefault();
+    const card = form.closest('.card');
+    try { await recordDates(card, Number(card.dataset.request), form); }
+    catch (err) { $('.detail', card).innerHTML = `<div class="notice err">${esc(err.message)}</div>`; }
+  });
+
+  load().then(render).catch((err) => { main.innerHTML = `<div class="notice err">${esc(err.message)}</div>`; });
+})();
+</script>
+</body>
+</html>

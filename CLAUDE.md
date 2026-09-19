@@ -62,7 +62,7 @@ All four provenance fields are non-optional in the type. Do not make them option
 
 ### The build must copy assets
 
-`schema.sql`, `seed-vendors.json`, and `ruby-health.json` are read at runtime relative to the compiled output. `tsc` alone produces a build that boots and then dies. The `copy-assets` script handles this; keep it wired into `build`.
+`schema.sql`, `seed-vendors.json`, `ruby-health.json`, and `ui/index.html` are read at runtime relative to the compiled output. `tsc` alone produces a build that boots and then dies. The `copy-assets` script handles this; keep it wired into `build`.
 
 ## Behaviors that are intentional
 
@@ -111,6 +111,7 @@ src/
   jobs/checkClocks.ts    Deadline classification; on demand, no scheduled cron
   jobs/extractTerms.ts   Terms extraction; --dry-run needs no database
   profile/ruby-health.json  Ruby's canonical facts
+  ui/index.html          One-page UI over the API; served at /, copied by build
   server.ts              Fastify API
 ```
 
