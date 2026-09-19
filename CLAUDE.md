@@ -13,13 +13,16 @@ The output of this system may end up in a regulatory complaint. That is the stan
 ## Commands
 
 ```bash
-npm test              # 75 assertions; no database needed
+npm test              # 116 assertions; no database or API key needed
 npx tsc --noEmit      # must be clean
 npm run build         # tsc + copies runtime assets into dist/
 npm run migrate       # idempotent
 npm run sync          # CHPL pull; needs CHPL_API_KEY and DATABASE_URL
 npm run clocks        # re-classify deadlines
+npm run extract       # read vendors' published terms; needs ANTHROPIC_API_KEY (+ DATABASE_URL unless --dry-run)
 ```
+
+The `npm run` scripts load `.env` if it exists (`--env-file-if-exists`); on Render the variables come from the environment and there is no file.
 
 Run `npm test` and `npx tsc --noEmit` before considering any change done.
 
@@ -43,11 +46,15 @@ Leave it on. If it produces an error, fix the access — do not disable the flag
 
 ### Empty `requirements` arrays in `src/db/seed-vendors.json`
 
-These are deliberately empty and must stay that way. Requirements carry provenance — source URL, retrieval date, confidence, and the verbatim snippet. Writing plausible-looking values with invented snippets would produce a system that looks like it has evidence and does not. Populate them by running the extractor against vendors' actually-published terms, never by hand.
+These are deliberately empty and must stay that way. Requirements carry provenance — source URL, retrieval date, confidence, and the verbatim snippet. Writing plausible-looking values with invented snippets would produce a system that looks like it has evidence and does not. Populate them by running the extractor (`npm run extract`) against vendors' actually-published terms, never by hand. `sourceUrls` on a seed entry is the one thing you should add by hand: it is a pointer to where the vendor publishes, not a claim about what they say.
 
 ### Required provenance on `ExtractedField`
 
 All four provenance fields are non-optional in the type. Do not make them optional to simplify a call site. The type is where this rule is cheapest to enforce, and the one time someone skips it will be the time it matters.
+
+### The snippet gate in `src/lib/extractor.ts`
+
+`verifyCandidates` rejects any extracted field whose snippet does not appear verbatim (whitespace, quote style, and dash style normalized — nothing else) in the fetched text of the page it cites. This is the only thing standing between "a language model said so" and "evidence". The model is asked to copy exact sentences; the gate is what checks that it did. Do not loosen the match to fuzzy or partial, do not let a rejected candidate through with a lowered confidence, and do not save anything that has not been through it. Rejections are printed so a human can see what the model tried to claim.
 
 ### No TypeScript parameter properties
 
@@ -94,11 +101,14 @@ src/
   lib/businessDays.ts    Federal-holiday-aware deadline math  [most load-bearing]
   lib/chpl.ts            CHPL Open API client
   lib/extract.ts         Field vocabulary, provenance, diffing, compliance checks
+  lib/terms.ts           Fetch vendor pages, HTML->text, verbatim snippet check
+  lib/extractor.ts       Claude extraction pass + the snippet gate
   lib/packet.ts          Submission packet generator
   lib/complaint.ts       ONC complaint drafter
   lib/notion.ts          One-way mirror to the tracker; no-op when unconfigured
   jobs/syncRegistry.ts   CHPL sync
   jobs/checkClocks.ts    Daily deadline classification
+  jobs/extractTerms.ts   Terms extraction; --dry-run needs no database
   profile/ruby-health.json  Ruby's canonical facts
   server.ts              Fastify API
 ```

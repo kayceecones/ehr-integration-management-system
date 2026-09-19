@@ -36,12 +36,24 @@ readonly status?: number)` needs a full compile. The jobs run under
 JSON data files are read at runtime relative to the compiled output. The build
 script copies them.
 
+**The link follower fetched the same page twice.** `/foo` and `/foo/` both
+appeared as links and both redirected to the same page. Deduping happens on a
+trailing-slash-insensitive key now, and a fetch that redirects onto a page we
+already hold is dropped. Harmless here, but a duplicate page doubles the
+extractor's input and would have double-counted in the sync log.
+
 ## Design decisions that are load-bearing
 
 **Provenance is enforced by the type, not by convention.** `ExtractedField`
 requires `sourceUrl`, `retrievedAt`, `confidence`, and `snippet`. There is no
 way to record a requirement without its evidence, because the one time someone
 skips it will be the time it matters.
+
+**The extractor cannot save what it cannot quote.** The model proposes
+fields with a verbatim snippet and a URL; `verifyCandidates` rejects any
+snippet that is not found in the fetched text of that URL. The rejection is
+printed, not stored. A model can write a perfectly plausible sentence that is
+not on the page, and that is exactly the failure this system cannot afford.
 
 **A vanished field is not a deletion.** If a re-fetch does not find a field we
 previously held, `diffExtraction` reports nothing. Absence far more often means

@@ -93,11 +93,14 @@ src/
   db/schema.sql          Postgres schema: vendors, requirements, provenance, requests
   lib/businessDays.ts    Federal-holiday-aware business day arithmetic
   lib/chpl.ts            CHPL Open API client
-  lib/extract.ts         Requirements extraction + normalization + diffing
+  lib/extract.ts         Field vocabulary, provenance, normalization, diffing
+  lib/terms.ts           Fetches vendor pages; verifies snippets are verbatim
+  lib/extractor.ts       Claude extraction pass, gated by that verification
   lib/packet.ts          Submission packet generator
   lib/notion.ts          Mirrors request state to the Notion tracker
   jobs/syncRegistry.ts   CHPL sync
   jobs/checkClocks.ts    Daily deadline classification
+  jobs/extractTerms.ts   Reads each vendor's published terms into the registry
   profile/ruby-health.json  Ruby's canonical facts
   server.ts              Fastify API
 ```
@@ -110,17 +113,38 @@ cp .env.example .env     # fill in DATABASE_URL and CHPL_API_KEY
 npm run build
 npm run migrate          # idempotent; safe to re-run
 npm run sync             # pull CHPL, match the in-scope vendors
+npm run extract          # read each vendor's published terms (needs ANTHROPIC_API_KEY)
 npm start
 ```
 
-`npm test` runs the clock, extraction, and name-matching suites (75 assertions,
-no database required).
+The scripts load `.env` when it exists. `npm test` runs the clock, extraction,
+terms-verification, and name-matching suites (116 assertions, no database or
+API key required).
+
+## How extraction works
+
+`npm run extract` fetches the pages listed in each vendor's `sourceUrls` (plus
+same-origin links that look like terms, fees, or registration pages, up to a
+small cap), reduces them to text, and asks Claude to fill the field vocabulary
+in `src/lib/extract.ts`, citing the URL and the verbatim sentence for each.
+
+Nothing the model says is saved as-is. `verifyCandidates` checks that every
+snippet actually appears in the fetched text of the page it cites; a candidate
+whose snippet cannot be found is rejected and printed, never stored. That
+check is what turns a model's output into evidence a human can open the URL
+and confirm.
+
+```bash
+npm run extract -- --vendor "Canvas Medical" --dry-run   # no database; prints what it would save
+npm run extract -- --vendor "Canvas Medical"             # saves, diffs against prior values
+```
 
 ## Environment
 
 See `.env.example`. `CHPL_API_KEY` is a free read-only key from
-chpl.healthit.gov. The Notion variables are optional -- with them unset the
-mirror is a no-op and everything else still runs.
+chpl.healthit.gov. `ANTHROPIC_API_KEY` is needed only by `npm run extract`.
+The Notion variables are optional -- with them unset the mirror is a no-op and
+everything else still runs.
 
 ## API
 

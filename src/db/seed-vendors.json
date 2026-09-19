@@ -9,9 +9,12 @@
     "The `requirements` arrays are intentionally EMPTY. Requirements carry",
     "provenance by design, and hand-writing plausible-looking values with",
     "invented snippets would defeat the entire point of that design. Run the",
-    "extractor to populate them from the vendors' actually-published terms."
+    "extractor to populate them from the vendors' actually-published terms.",
+    "",
+    "`sourceUrls` lists the vendor's published pages the extractor reads first;",
+    "same-origin links that look like terms, fees, or registration pages are",
+    "followed from there, up to a small cap."
   ],
-
   "vendors": [
     {
       "name": "Canvas Medical",
@@ -20,8 +23,14 @@
       "website": "https://www.canvasmedical.com",
       "developerPortalUrl": "https://docs.canvasmedical.com/api/developer-access/",
       "apiDocumentationUrl": "https://docs.canvasmedical.com/",
-      "termsUrl": null,
-      "contactEmail": null,
+      "termsUrl": "https://docs.canvasmedical.com/api/terms-of-use/",
+      "contactEmail": "developer-access@canvasmedical.com",
+      "sourceUrls": [
+        "https://docs.canvasmedical.com/api/developer-access/",
+        "https://docs.canvasmedical.com/api/terms-of-use/",
+        "https://docs.canvasmedical.com/api/service-base-urls/",
+        "https://docs.canvasmedical.com/api/customer-authentication/"
+      ],
       "inScope": true,
       "posture": "developer-first",
       "whyInScope": "Publishes its third-party developer access process openly, including the distinction between patient-directed and population/system access. The easy case -- if the system cannot produce a clean packet here, something is wrong with the system rather than the vendor.",
@@ -36,6 +45,7 @@
       "apiDocumentationUrl": null,
       "termsUrl": null,
       "contactEmail": null,
+      "sourceUrls": [],
       "inScope": true,
       "posture": "incumbent",
       "whyInScope": "Large incumbent with a heavier partner program and significant share among independent ambulatory practices. The hard case -- where published terms and actual practice are most likely to diverge, and where the regulatory deadlines matter most.",
@@ -50,6 +60,7 @@
       "apiDocumentationUrl": null,
       "termsUrl": null,
       "contactEmail": null,
+      "sourceUrls": [],
       "inScope": true,
       "posture": "mid-market",
       "whyInScope": "Built specifically for independent primary care, which is closest to Ruby's actual buyer. The realistic case.",
