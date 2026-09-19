@@ -1,7 +1,9 @@
 /**
- * Daily job: re-classify every open access request against its deadlines.
+ * Re-classify every open access request against its deadlines.
  *
- * Runs on a schedule. Statuses are stored rather than computed on read so that
+ * Runs on demand -- after every date recorded through the API, via
+ * POST /jobs/clocks, or `npm run clocks`. There is deliberately no scheduled
+ * cron. Statuses are stored rather than computed on read so that
  * the API, the Notion mirror, and any complaint draft all quote the same
  * numbers -- three surfaces disagreeing about whether a vendor is late is
  * exactly the kind of thing that undermines an escalation.

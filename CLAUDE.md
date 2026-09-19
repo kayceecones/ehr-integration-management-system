@@ -18,7 +18,7 @@ npx tsc --noEmit      # must be clean
 npm run build         # tsc + copies runtime assets into dist/
 npm run migrate       # idempotent
 npm run sync          # CHPL pull; needs CHPL_API_KEY and DATABASE_URL
-npm run clocks        # re-classify deadlines
+npm run clocks        # re-classify deadlines (also runs on every POST /requests/:id/dates)
 npm run extract       # read vendors' published terms; needs ANTHROPIC_API_KEY (+ DATABASE_URL unless --dry-run)
 ```
 
@@ -107,7 +107,7 @@ src/
   lib/complaint.ts       ONC complaint drafter
   lib/notion.ts          One-way mirror to the tracker; no-op when unconfigured
   jobs/syncRegistry.ts   CHPL sync
-  jobs/checkClocks.ts    Daily deadline classification
+  jobs/checkClocks.ts    Deadline classification; on demand, no scheduled cron
   jobs/extractTerms.ts   Terms extraction; --dry-run needs no database
   profile/ruby-health.json  Ruby's canonical facts
   server.ts              Fastify API

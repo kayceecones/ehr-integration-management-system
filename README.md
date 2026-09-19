@@ -44,8 +44,10 @@ process.
    packet, written to a Notion page and linked from that vendor's tracker row.
    Generation never sends anything — a human reviews and submits.
 5. **Clock tracking.** Once a request is marked sent, both regulatory deadlines
-   are computed in business days (weekends and federal holidays excluded). A
-   daily job classifies each request as on time, due soon, or overdue.
+   are computed in business days (weekends and federal holidays excluded).
+   Each request is classified as on time, due soon, or overdue -- recomputed
+   whenever a date is recorded, on every read of `/requests`, and on demand
+   via `POST /jobs/clocks` or `npm run clocks`.
 6. **Change detection.** Vendor terms are re-fetched on a schedule and
    normalized fields are hashed. A quiet fee addition or a new attestation
    requirement surfaces as a diff for review.
@@ -99,7 +101,7 @@ src/
   lib/packet.ts          Submission packet generator
   lib/notion.ts          Mirrors request state to the Notion tracker
   jobs/syncRegistry.ts   CHPL sync
-  jobs/checkClocks.ts    Daily deadline classification
+  jobs/checkClocks.ts    Deadline classification (on demand)
   jobs/extractTerms.ts   Reads each vendor's published terms into the registry
   profile/ruby-health.json  Ruby's canonical facts
   server.ts              Fastify API

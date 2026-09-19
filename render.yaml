@@ -13,29 +13,17 @@ services:
           property: connectionString
       - key: CHPL_API_KEY
         sync: false
+      - key: ANTHROPIC_API_KEY   # only for `npm run extract`; the server itself does not call Claude
+        sync: false
       - key: NOTION_TOKEN
         sync: false
       - key: NOTION_DATA_SOURCE_ID
         sync: false
 
-  # Daily deadline check. The whole point of tracking the 170.404 clocks is
-  # noticing a missed deadline on the day it is missed, not weeks later.
-  - type: cron
-    name: ehr-clock-check
-    runtime: node
-    plan: starter
-    schedule: "0 15 * * 1-5"  # 08:00 America/Los_Angeles, weekdays (UTC)
-    buildCommand: npm install && npm run build
-    startCommand: node dist/jobs/checkClocks.js
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: ehr-access-registry
-          property: connectionString
-      - key: NOTION_TOKEN
-        sync: false
-      - key: NOTION_DATA_SOURCE_ID
-        sync: false
+  # No scheduled cron. Deadline classification runs on demand: POST /jobs/clocks
+  # on the web service, or `npm run clocks` locally. It also runs automatically
+  # whenever a date is recorded via POST /requests/:id/dates, and GET /requests
+  # recomputes clocks live on every read.
 
 databases:
   - name: ehr-access-registry
